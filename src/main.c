@@ -2,15 +2,15 @@
 #include <stdio.h>
 
 int main() {
-  kv_t *table = kv_init(3);
+  kv_t *table = kv_init(10);
   printf("%p\n", table);
   printf("%ld\n", table->capacity);
 
-  kv_put(table, "hehe", "xd");
+  kv_put(table, "a", "b");
+  kv_put(table, "hehe", "hoho");
+  kv_put(table, "haha", "lmao");
 
   for (int i = 0; i < table->capacity; i++) {
-    if (table->entries[i].key) {
-      printf("%s : %s\n", table->entries[i].key, table->entries[i].value);
-    }
+    printf("%s : %s\n", table->entries[i].key, table->entries[i].value);
   }
 }

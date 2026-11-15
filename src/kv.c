@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TOMBSTONE 0x1
+#define TOMBSTONE ((char *)0x1)
 /// fn hash
 // params:
 //   - val: character pointer for a value we
@@ -11,7 +11,7 @@
 // returns: a number that is smaller than the
 // size of the database
 size_t hash(char *val, int capacity) {
-  size_t hash = 0x31415A26B4F9CFFF;
+  size_t hash = 0x13371337deadbeef;
 
   while (*val) {
 
@@ -22,6 +22,52 @@ size_t hash(char *val, int capacity) {
     val++;
   }
   return hash % capacity;
+}
+
+// fn kv_put
+// params:
+//   - db: a pointer to the database
+//   - key: a pointer to the key value
+//   - value: a pointer to the value itself
+// returns: the index of the key or on error,
+// returns -1, returns -2 on full database.
+int kv_put(kv_t *db, char *key, char *value) {
+  if (!db || !key || !value)
+    return -1;
+
+  size_t idx = hash(key, db->capacity);
+
+  for (int i = 0; i < db->capacity - 1; i++) {
+    size_t real_idx = (idx + i) % db->capacity;
+
+    kv_entry_t *entry = &db->entries[real_idx];
+
+    // if key already set, update value
+    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+      char *new_value = strdup(value);
+      if (!new_value)
+        return -1;
+      entry->value = new_value;
+      return real_idx;
+    }
+
+    // arrive in slot that is empty
+    if (!entry->key || entry->key == TOMBSTONE) {
+      char *new_key = strdup(key);
+      char *new_value = strdup(value);
+      if (!new_key || !new_value) {
+        free(new_key);
+        free(new_value);
+        return -1;
+      }
+      entry->key = new_key;
+      entry->value = new_value;
+      db->count++;
+      return real_idx;
+    }
+  }
+  // database is full  TODO: have database reallocate its own side
+  return -2;
 }
 
 // fn kv_init
@@ -47,51 +93,4 @@ kv_t *kv_init(size_t capacity) {
   }
 
   return table;
-}
-
-// fn kv_put
-// params:
-//   - db: a pointer to the database
-//   - key: a pointer to the key value
-//   - value: a pointer to the value itself
-// returns: the index of the key or on error,
-// returns -1, returns -2 on full database.
-int kv_put(kv_t *db, char *key, char *value) {
-  if (!db || !key || !value)
-    return -1;
-
-  size_t idx = hash(key, db->capacity);
-
-  for (int i = 0; i < db->capacity - 1; i++) {
-    size_t real_idx = (idx + i) % db->capacity;
-
-    kv_entry_t *entry = &db->entries[real_idx];
-
-    // if key already set, update value
-    if (entry->key && entry->key != (void *)TOMBSTONE &&
-        !strcmp(entry->key, key)) {
-      char *new_value = strdup(value);
-      if (!new_value)
-        return -1;
-      entry->value = new_value;
-      return real_idx;
-    }
-
-    // arrive in slot that is empty
-    if (entry->key && entry->key == (void *)TOMBSTONE) {
-      char *new_key = strdup(key);
-      char *new_value = strdup(value);
-      if (!new_key || !new_value) {
-        free(new_key);
-        free(new_value);
-        return -1;
-      }
-      entry->key = new_key;
-      entry->value = new_value;
-      db->count++;
-      return real_idx;
-    }
-  }
-  // database is full  TODO: have database reallocate its own side
-  return -2;
 }
