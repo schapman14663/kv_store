@@ -48,7 +48,7 @@ int kv_put(kv_t *db, char *key, char *value) {
       if (!new_value)
         return -1;
       entry->value = new_value;
-      return real_idx;
+      return 0;
     }
 
     // arrive in slot that is empty
@@ -63,7 +63,7 @@ int kv_put(kv_t *db, char *key, char *value) {
       entry->key = new_key;
       entry->value = new_value;
       db->count++;
-      return real_idx;
+      return 0;
     }
   }
   // database is full  TODO: have database reallocate its own side
