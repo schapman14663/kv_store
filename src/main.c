@@ -5,4 +5,12 @@ int main() {
   kv_t *table = kv_init(3);
   printf("%p\n", table);
   printf("%ld\n", table->capacity);
+
+  kv_put(table, "hehe", "xd");
+
+  for (int i = 0; i < table->capacity; i++) {
+    if (table->entries[i].key) {
+      printf("%s : %s\n", table->entries[i].key, table->entries[i].value);
+    }
+  }
 }
