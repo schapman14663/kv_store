@@ -77,6 +77,9 @@ int kv_put(kv_t *db, char *key, char *value) {
 //  - key: the key for the kv pair we're looking for.
 // returns: the value associated with the key.
 char *kv_get(kv_t *db, char *key) {
+  if (!db || !key)
+    return NULL;
+
   size_t start_idx = hash(key, db->capacity);
 
   for (int i = start_idx; i < db->capacity; i++) {
