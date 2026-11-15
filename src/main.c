@@ -13,4 +13,7 @@ int main() {
   for (int i = 0; i < table->capacity; i++) {
     printf("%s : %s\n", table->entries[i].key, table->entries[i].value);
   }
+
+  char *get = kv_get(table, "hehe");
+  printf("%s\n", get);
 }

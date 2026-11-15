@@ -71,6 +71,31 @@ int kv_put(kv_t *db, char *key, char *value) {
   return -2;
 }
 
+// fn kv_get
+// params:
+//  - database: the database we need the pair from.
+//  - key: the key for the kv pair we're looking for.
+// returns: the value associated with the key.
+char *kv_get(kv_t *db, char *key) {
+  size_t start_idx = hash(key, db->capacity);
+
+  for (int i = start_idx; i < db->capacity; i++) {
+
+    kv_entry_t *entry = &db->entries[i];
+
+    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+      return entry->value;
+    }
+
+    if (!entry->key || entry->key == TOMBSTONE) {
+      if (i != db->capacity) {
+        continue;
+      }
+    }
+  }
+  return NULL;
+}
+
 // fn kv_init
 // params:
 //   - capacity: the maximum (unused) size
