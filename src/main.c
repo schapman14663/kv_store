@@ -10,6 +10,8 @@ int main() {
   kv_put(table, "hehe", "hoho");
   kv_put(table, "haha", "lmao");
 
+  kv_delete(table, "a");
+
   for (int i = 0; i < table->capacity; i++) {
     printf("%s : %s\n", table->entries[i].key, table->entries[i].value);
   }

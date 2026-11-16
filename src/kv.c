@@ -99,6 +99,32 @@ char *kv_get(kv_t *db, char *key) {
   return NULL;
 }
 
+// fn kv_delete
+// params:
+//  - database: the database we are interacting with
+//  - key: the key to delete
+// returns: confirmation that the entry has been deleted
+// and a tombstone has been created in its place.
+int kv_delete(kv_t *db, char *key) {
+  if (!db || !key)
+    return -1;
+
+  size_t start_idx = hash(key, db->capacity);
+
+  for (int i = start_idx; i < db->capacity; i++) {
+
+    kv_entry_t *entry = &db->entries[i];
+
+    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+      free(entry->key);
+      free(entry->value);
+      // TODO: insert TOMBSTONE
+      db->count--;
+    }
+  }
+  return -1;
+}
+
 // fn kv_init
 // params:
 //   - capacity: the maximum (unused) size
