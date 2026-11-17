@@ -10,7 +10,7 @@
 //   - capacity: the size of the database
 // returns: a number that is smaller than the
 // size of the database
-size_t hash(char *val, int capacity) {
+size_t hash(char *val, size_t capacity) {
   size_t hash = 0x13371337deadbeef;
 
   while (*val) {
@@ -37,10 +37,18 @@ int kv_put(kv_t *db, char *key, char *value) {
 
   size_t idx = hash(key, db->capacity);
 
+  kv_entry_t *target = NULL;
+
   for (size_t i = 0; i < db->capacity; i++) {
     size_t real_idx = (idx + i) % db->capacity;
 
     kv_entry_t *entry = &db->entries[real_idx];
+
+    // if a tombstone is found before a key, take a note of it and
+    // keep probing.
+    if (entry->key == TOMBSTONE && !target) {
+      target = entry;
+    }
 
     // if key already set, update value
     if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
@@ -53,21 +61,28 @@ int kv_put(kv_t *db, char *key, char *value) {
     }
 
     // arrive in slot that is empty
-    if (!entry->key || entry->key == TOMBSTONE) {
-      char *new_key = strdup(key);
-      char *new_value = strdup(value);
-      if (!new_key || !new_value) {
-        free(new_key);
-        free(new_value);
-        return -1;
+    if (!entry->key) {
+      if (!target) {
+        target = entry;
       }
-      entry->key = new_key;
-      entry->value = new_value;
-      db->count++;
-      return 0;
+      break;
     }
   }
-  // database is full  TODO: have database reallocate its own side
+
+  if (target) {
+    char *new_key = strdup(key);
+    char *new_value = strdup(value);
+    if (!new_key || !new_value) {
+      free(new_key);
+      free(new_value);
+      return -1;
+    }
+    target->key = new_key;
+    target->value = new_value;
+    db->count++;
+    return 0;
+  }
+  // database is full  TODO: have database reallocate its own size
   return -2;
 }
 
@@ -136,7 +151,7 @@ int kv_delete(kv_t *db, char *key) {
 // params:
 //   - database: the database being deleted
 // returns: confirmation of deletion of table
-int kv_free(kv_t *db) {
+void kv_free(kv_t *db) {
   if (!db)
     return -1;
 
@@ -154,7 +169,7 @@ int kv_free(kv_t *db) {
   }
   free(db->entries);
   free(db);
-  return 0;
+  // return 0;
 }
 
 // fn kv_init
@@ -174,7 +189,7 @@ kv_t *kv_init(size_t capacity) {
   table->capacity = capacity;
   table->count = 0;
 
-  table->entries = calloc(sizeof(kv_entry_t), capacity);
+  table->entries = calloc(capacity, sizeof(kv_entry_t));
   if (table->entries == NULL) {
     free(table);
     return NULL;
