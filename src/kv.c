@@ -82,18 +82,18 @@ char *kv_get(kv_t *db, char *key) {
 
   size_t start_idx = hash(key, db->capacity);
 
-  for (int i = start_idx; i < db->capacity; i++) {
+  for (int i = 0; i < db->capacity; i++) {
 
-    kv_entry_t *entry = &db->entries[i];
+    size_t real_idx = (start_idx + i) % db->capacity;
+
+    kv_entry_t *entry = &db->entries[real_idx];
 
     if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
       return entry->value;
     }
 
-    if (!entry->key || entry->key == TOMBSTONE) {
-      if (i != db->capacity) {
-        continue;
-      }
+    if (entry->key == NULL || entry->key == TOMBSTONE) {
+      return NULL;
     }
   }
   return NULL;
