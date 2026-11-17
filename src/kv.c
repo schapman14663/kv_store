@@ -29,7 +29,7 @@ size_t hash(char *val, int capacity) {
 //   - db: a pointer to the database
 //   - key: a pointer to the key value
 //   - value: a pointer to the value itself
-// returns: the index of the key or on error,
+// returns: 0 on success
 // returns -1, returns -2 on full database.
 int kv_put(kv_t *db, char *key, char *value) {
   if (!db || !key || !value)
@@ -132,15 +132,19 @@ int kv_delete(kv_t *db, char *key) {
   return -1;
 }
 
+// fn kv_free
+// params:
+//   - database: the database being deleted
+// returns: confirmation of deletion of table
 int kv_free(kv_t *db) {
   if (!db)
     return -1;
 
-  for (size_t i = 0; i < db->capacity; i--) {
+  for (size_t i = 0; i < db->capacity; i++) {
 
     kv_entry_t *entry = &db->entries[i];
 
-    if (!entry->key && entry->key != TOMBSTONE) {
+    if (entry->key && entry->key != TOMBSTONE) {
       free(entry->value);
       free(entry->key);
       entry->value = NULL;
