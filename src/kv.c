@@ -37,7 +37,7 @@ int kv_put(kv_t *db, char *key, char *value) {
 
   size_t idx = hash(key, db->capacity);
 
-  for (int i = 0; i < db->capacity; i++) {
+  for (size_t i = 0; i < db->capacity; i++) {
     size_t real_idx = (idx + i) % db->capacity;
 
     kv_entry_t *entry = &db->entries[real_idx];
@@ -82,7 +82,7 @@ char *kv_get(kv_t *db, char *key) {
 
   size_t start_idx = hash(key, db->capacity);
 
-  for (int i = 0; i < db->capacity; i++) {
+  for (size_t i = 0; i < db->capacity; i++) {
 
     size_t real_idx = (start_idx + i) % db->capacity;
 
@@ -111,7 +111,7 @@ int kv_delete(kv_t *db, char *key) {
 
   size_t start_idx = hash(key, db->capacity);
 
-  for (int i = 0; i < db->capacity; i++) {
+  for (size_t i = 0; i < db->capacity; i++) {
 
     size_t real_idx = (start_idx + i) % db->capacity;
     kv_entry_t *entry = &db->entries[real_idx];
@@ -179,6 +179,5 @@ kv_t *kv_init(size_t capacity) {
     free(table);
     return NULL;
   }
-
   return table;
 }
