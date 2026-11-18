@@ -3,7 +3,8 @@
 #include <string.h>
 
 #define TOMBSTONE ((char *)0x1)
-/// fn hash
+
+// fn hash
 // params:
 //   - val: character pointer for a value we
 //   want to hash
@@ -11,7 +12,7 @@
 // returns: a number that is smaller than the
 // size of the database
 size_t hash(char *val, size_t capacity) {
-  size_t hash = 0x13371337deadbeef;
+  size_t hash = 0x01928465deadbeef;
 
   while (*val) {
 
@@ -24,6 +25,49 @@ size_t hash(char *val, size_t capacity) {
   return hash % capacity;
 }
 
+// fn kv_resize
+//  params:
+//  - database: the database we need to resize
+// returns: a database
+static kv_t *kv_resize(kv_t *db) {
+
+  kv_entry_t *old_table = db->entries;
+  size_t old_cap = db->capacity;
+
+  db->capacity = old_cap * 2;
+  db->entries = calloc(db->capacity, sizeof(kv_entry_t));
+  if (db->entries == NULL) {
+    db->entries = old_table;
+    db->capacity = old_cap;
+    return NULL;
+  }
+  db->count = 0;
+
+  for (size_t i = 0; i < old_cap; i++) {
+
+    kv_entry_t *entry = &old_table[i];
+
+    // make sure we are only rehashing actual entries
+    if (entry->key && entry->key != TOMBSTONE) {
+      size_t new_idx = hash(entry->key, db->capacity);
+      for (size_t j = 0; j < db->capacity; j++) {
+        size_t realloc_idx = (new_idx + j) % db->capacity;
+
+        kv_entry_t *new_entry = &db->entries[realloc_idx];
+
+        if (new_entry->key == NULL) {
+          new_entry->key = entry->key;
+          new_entry->value = entry->value;
+          db->count++;
+          break;
+        }
+      }
+    }
+  }
+  free(old_table);
+  return db;
+}
+
 // fn kv_put
 // params:
 //   - db: a pointer to the database
@@ -34,6 +78,13 @@ size_t hash(char *val, size_t capacity) {
 int kv_put(kv_t *db, char *key, char *value) {
   if (!db || !key || !value)
     return -1;
+
+  // resize database when approaching max capacity
+  if (10 * db->count >= 9 * db->capacity) {
+    if (!kv_resize(db)) {
+      return -1;
+    }
+  }
 
   size_t idx = hash(key, db->capacity);
 
@@ -82,7 +133,7 @@ int kv_put(kv_t *db, char *key, char *value) {
     db->count++;
     return 0;
   }
-  // database is full  TODO: have database reallocate its own size
+  // database is full
   return -2;
 }
 
@@ -134,7 +185,7 @@ int kv_delete(kv_t *db, char *key) {
     if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
       free(entry->key);
       free(entry->value);
-      db->count--;
+      // db->count--;
       entry->key = TOMBSTONE;
       entry->value = NULL;
       return 0;
@@ -151,7 +202,7 @@ int kv_delete(kv_t *db, char *key) {
 // params:
 //   - database: the database being deleted
 // returns: confirmation of deletion of table
-void kv_free(kv_t *db) {
+int kv_free(kv_t *db) {
   if (!db)
     return -1;
 
@@ -169,7 +220,7 @@ void kv_free(kv_t *db) {
   }
   free(db->entries);
   free(db);
-  // return 0;
+  return 0;
 }
 
 // fn kv_init
