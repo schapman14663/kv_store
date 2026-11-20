@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TOMBSTONE ((char *)0x1)
-
+static const char TOMBSTONE;
 // fn hash
 // params:
 //   - val: character pointer for a value we
@@ -11,7 +10,7 @@
 //   - capacity: the size of the database
 // returns: a number that is smaller than the
 // size of the database
-size_t hash(char *val, size_t capacity) {
+size_t hash(const char *val, size_t capacity) {
   size_t hash = 0x01928465deadbeef;
 
   while (*val) {
@@ -48,7 +47,7 @@ static kv_t *kv_resize(kv_t *db) {
     kv_entry_t *entry = &old_table[i];
 
     // make sure we are only rehashing actual entries
-    if (entry->key && entry->key != TOMBSTONE) {
+    if (entry->key && entry->key != &TOMBSTONE) {
       size_t new_idx = hash(entry->key, db->capacity);
       for (size_t j = 0; j < db->capacity; j++) {
         size_t realloc_idx = (new_idx + j) % db->capacity;
@@ -75,7 +74,7 @@ static kv_t *kv_resize(kv_t *db) {
 //   - value: a pointer to the value itself
 // returns: 0 on success
 // returns -1, returns -2 on full database.
-int kv_put(kv_t *db, char *key, char *value) {
+int kv_put(kv_t *db, const char *key, const char *value) {
   if (!db || !key || !value)
     return -1;
 
@@ -97,12 +96,12 @@ int kv_put(kv_t *db, char *key, char *value) {
 
     // if a tombstone is found before a key, take a note of it and
     // keep probing.
-    if (entry->key == TOMBSTONE && !target) {
+    if (entry->key == &TOMBSTONE && !target) {
       target = entry;
     }
 
     // if key already set, update value
-    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+    if (entry->key && entry->key != &TOMBSTONE && !strcmp(entry->key, key)) {
       char *new_value = strdup(value);
       if (!new_value)
         return -1;
@@ -142,7 +141,7 @@ int kv_put(kv_t *db, char *key, char *value) {
 //  - database: the database we need the pair from.
 //  - key: the key for the kv pair we're looking for.
 // returns: the value associated with the key.
-char *kv_get(kv_t *db, char *key) {
+char *kv_get(kv_t *db, const char *key) {
   if (!db || !key)
     return NULL;
 
@@ -154,7 +153,7 @@ char *kv_get(kv_t *db, char *key) {
 
     kv_entry_t *entry = &db->entries[real_idx];
 
-    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+    if (entry->key && entry->key != &TOMBSTONE && !strcmp(entry->key, key)) {
       return entry->value;
     }
 
@@ -171,7 +170,7 @@ char *kv_get(kv_t *db, char *key) {
 //  - key: the key to delete
 // returns: confirmation that the entry has been deleted
 // and a tombstone has been created in its place.
-int kv_delete(kv_t *db, char *key) {
+int kv_delete(kv_t *db, const char *key) {
   if (!db || !key)
     return -1;
 
@@ -182,11 +181,11 @@ int kv_delete(kv_t *db, char *key) {
     size_t real_idx = (start_idx + i) % db->capacity;
     kv_entry_t *entry = &db->entries[real_idx];
 
-    if (entry->key && entry->key != TOMBSTONE && !strcmp(entry->key, key)) {
+    if (entry->key && entry->key != &TOMBSTONE && !strcmp(entry->key, key)) {
       free(entry->key);
       free(entry->value);
       // db->count--;
-      entry->key = TOMBSTONE;
+      entry->key = (char *)&TOMBSTONE;
       entry->value = NULL;
       return 0;
     }
@@ -210,7 +209,7 @@ int kv_free(kv_t *db) {
 
     kv_entry_t *entry = &db->entries[i];
 
-    if (entry->key && entry->key != TOMBSTONE) {
+    if (entry->key && entry->key != &TOMBSTONE) {
       free(entry->value);
       free(entry->key);
       entry->value = NULL;
