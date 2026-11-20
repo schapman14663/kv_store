@@ -11,6 +11,7 @@ typedef struct {
 typedef struct {
   size_t capacity;
   size_t count;
+  size_t tombstone_count;
   kv_entry_t *entries;
 } kv_t;
 

@@ -41,6 +41,7 @@ static kv_t *kv_resize(kv_t *db) {
     return NULL;
   }
   db->count = 0;
+  db->tombstone_count = 0;
 
   for (size_t i = 0; i < old_cap; i++) {
 
@@ -79,7 +80,7 @@ int kv_put(kv_t *db, const char *key, const char *value) {
     return -1;
 
   // resize database when approaching max capacity
-  if (10 * db->count >= 9 * db->capacity) {
+  if (10 * (db->count + db->tombstone_count) >= 9 * db->capacity) {
     if (!kv_resize(db)) {
       return -1;
     }
@@ -126,6 +127,9 @@ int kv_put(kv_t *db, const char *key, const char *value) {
       free(new_key);
       free(new_value);
       return -1;
+    }
+    if (target->key == (char *)&TOMBSTONE) {
+      db->tombstone_count--;
     }
     target->key = new_key;
     target->value = new_value;
@@ -184,7 +188,8 @@ int kv_delete(kv_t *db, const char *key) {
     if (entry->key && entry->key != &TOMBSTONE && !strcmp(entry->key, key)) {
       free(entry->key);
       free(entry->value);
-      // db->count--;
+      db->count--;
+      db->tombstone_count++;
       entry->key = (char *)&TOMBSTONE;
       entry->value = NULL;
       return 0;
@@ -238,6 +243,7 @@ kv_t *kv_init(size_t capacity) {
 
   table->capacity = capacity;
   table->count = 0;
+  table->tombstone_count = 0;
 
   table->entries = calloc(capacity, sizeof(kv_entry_t));
   if (table->entries == NULL) {
