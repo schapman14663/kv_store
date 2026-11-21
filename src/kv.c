@@ -10,6 +10,7 @@ static const char TOMBSTONE;
 //   - capacity: the size of the database
 // returns: a number that is smaller than the
 // size of the database
+// TODO: Change how hashing function works
 size_t hash(const char *val, size_t capacity) {
   size_t hash = 0x01928465deadbeef;
 
@@ -33,7 +34,12 @@ static kv_t *kv_resize(kv_t *db) {
   kv_entry_t *old_table = db->entries;
   size_t old_cap = db->capacity;
 
-  db->capacity = old_cap * 2;
+  // Probably room to fine tune this, but generally want
+  // to not double the store unneccesasrily.
+  // TODO: fine tune capacity fluctuation, store should
+  // have room to shrink if needed.
+  db->capacity =
+      (db->count > db->tombstone_count) ? (old_cap * 2) : (old_cap + 10);
   db->entries = calloc(db->capacity, sizeof(kv_entry_t));
   if (db->entries == NULL) {
     db->entries = old_table;
@@ -80,7 +86,7 @@ int kv_put(kv_t *db, const char *key, const char *value) {
     return -1;
 
   // resize database when approaching max capacity
-  if (10 * (db->count + db->tombstone_count) >= 9 * db->capacity) {
+  if ((db->count + db->tombstone_count) >= 0.9 * db->capacity) {
     if (!kv_resize(db)) {
       return -1;
     }

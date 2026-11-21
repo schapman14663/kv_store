@@ -1,6 +1,12 @@
 # kv_store
 A Key-Value Store written in C
 
+TODO:
+- [ ] Update this README.
+- [ ] Change the Hashing Function
+
+
+
 Expected features:
 
 - [ x ] Store string Key-Value pairs in a hash table. 
