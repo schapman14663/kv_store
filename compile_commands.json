@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinc",
+      "-c",
+      "-o",
+      "obj/kv.o",
+      "src/kv.c"
+    ],
+    "directory": "/Users/simonchapman/Coding/kv_store",
+    "file": "/Users/simonchapman/Coding/kv_store/src/kv.c",
+    "output": "/Users/simonchapman/Coding/kv_store/obj/kv.o"
+  }
+]
