@@ -38,8 +38,15 @@ static kv_t *kv_resize(kv_t *db) {
   // to not double the store unneccesasrily.
   // TODO: fine tune capacity fluctuation, store should
   // have room to shrink if needed.
-  db->capacity =
-      (db->count > db->tombstone_count) ? (old_cap * 2) : (old_cap + 10);
+
+  if (db->count > db->tombstone_count) {
+    db->capacity = old_cap * 2;
+  } else if (db->count < (2 * db->tombstone_count)) {
+    db->capacity = old_cap / 2;
+  } else {
+    db->capacity = old_cap;
+  }
+
   db->entries = calloc(db->capacity, sizeof(kv_entry_t));
   if (db->entries == NULL) {
     db->entries = old_table;
